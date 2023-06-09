@@ -1,0 +1,310 @@
+---
+title: "Fishbrain"
+output: html_document
+date: "2023-06-09"
+---
+
+Load packages
+```{r}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+```
+
+Read in Fishbrain data
+```{r}
+fishbrain <- read_csv("fishbrain.csv")
+View(fishbrain)
+```
+
+Filter to north of Pt. Conception
+
+We decided to do this because the regulations in Southern district are complex.
+```{r}
+fishbrain_nc <- fishbrain %>% 
+  filter(latitude > 34.45)
+View(fishbrain_nc)
+```
+
+Add districts
+
+I created a new column that separated the data into the four CDFW districts based on the latitude of each data point.
+```{r}
+fish_dis <- fishbrain_nc %>% 
+  mutate(district = case_when(latitude > 34.45 & latitude < 37.18 ~ 'Central',
+                              latitude >= 37.18 & latitude < 38.91 ~ 'Bay Area',
+                              latitude > 38.91 & latitude < 40.44 ~ 'Wine',
+                              latitude > 40.44 ~ 'Redwood')
+  )
+View(fish_dis)
+```
+
+Extract day, month, year columns
+
+The caught_at_local_time column was a little difficult to work with on its own, so we decided to separate it into year, month, and day.
+```{r}
+fish_mdy <- fish_dis %>% 
+  separate(caught_at_local_time, c('year', 'month', 'day'))
+View(fish_mdy)
+```
+
+Species by year
+
+I first converted the units of fish length from m to cm so the values wouldn't be fractions. I then converted fish weight from kg to g for the same reason. I then decided to look at the relationship between species and year. This table shows the mean length and weight of each of the 12 species with lengths and weights recorded from 2018-2023.
+```{r}
+#Convert length to cm
+fish_cm <- fish_mdy %>% 
+  mutate(length_in_cm = length_in_m * 100) %>% 
+  drop_na()
+
+#Convert weight to g
+fish_g <- fish_cm %>% 
+  mutate(weight_in_g = weight_in_kg * 1000)
+View(fish_g)
+
+#Summary table
+species_yr <- fish_g %>% 
+  group_by(year, common_name) %>% 
+  summarize_if(is.numeric, mean) %>% 
+  select(year, common_name, length_in_cm, weight_in_g)
+View(species_yr)
+
+#NOTE: Gopher rockfish, kelp rockfish, painted greenling, and treefish were excluded from this analysis because their length values were all NA.
+```
+
+Species by district
+
+I then decided to look at the relationship between species and district. This table shows the mean weight and length of the previously shown 12 species by district.
+```{r}
+species_dis <- fish_g %>% 
+  group_by(district, common_name) %>% 
+  summarize_if(is.numeric, mean) %>% 
+  select(district, common_name, length_in_cm, weight_in_g)
+View(species_dis)
+
+#NOTE: Gopher rockfish, kelp rockfish, painted greenling, and treefish were excluded from this analysis because their length values were all NA.
+```
+
+Plot #1: length by species
+
+This first plot shows the relationship between species and length. 
+```{r}
+#Summary table
+species_lgt <- fish_cm %>% 
+  group_by(common_name) %>% 
+  summarize(mean_length_cm = mean(length_in_cm)) 
+View(species_lgt)
+  
+#Graph
+species_lgt %>% 
+  ggplot(aes(common_name, mean_length_cm)) + 
+  geom_point() + 
+  ylim(0, 50) +
+  labs(x = "Species", y = "Mean Length (cm)") + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+#NOTE: Gopher rockfish, kelp rockfish, painted greenling, and treefish were excluded from this analysis because their length values were all NA.
+```
+
+Plot #2: length by district
+
+This second plot shows the mean length for each district.
+```{r}
+#Summary table
+dis_lgt <- fish_cm %>% 
+  group_by(district) %>% 
+  summarize(mean_length_cm = mean(length_in_cm))
+View(dis_lgt)
+
+#Graph
+dis_lgt %>% 
+  ggplot(aes(district, mean_length_cm)) +
+  geom_point() + 
+  ylim(0, 50) +
+  labs(x = "District", y = "Mean Length (cm)")
+
+#NOTE: Gopher rockfish, kelp rockfish, painted greenling, and treefish were excluded from this analysis because their length values were all NA.
+```
+
+Number of fish by month
+
+We decided to look at the number of fish caught for each month. Using the assumption that one fish was caught for each data point, I first created a summary table that created a new column called fish_count which counted the number of rows for each month. I then created separate tables for each species showing how many of those species had been caught each month. 
+```{r}
+#All species
+fish_month <- fish_mdy %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count = median(count))
+View(fish_month)
+
+#Black and yellow rockfish
+fish_month_by <- fish_mdy %>% 
+  filter(common_name == "Black and yellow rockfish") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_by = median(count))
+View(fish_month_by)
+
+#Black rockfish
+fish_month_bla <- fish_mdy %>% 
+  filter(common_name == "Black rockfish") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_bla = median(count))
+View(fish_month_bla)
+
+#Blue rockfish
+fish_month_blu <- fish_mdy %>% 
+  filter(common_name == "Blue rockfish") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_blu = median(count))
+View(fish_month_blu)
+
+#Brown rockfish
+fish_month_br <- fish_mdy %>% 
+  filter(common_name == "Brown rockfish") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_br = median(count))
+View(fish_month_br)
+
+#Cabezon
+fish_month_ca <- fish_mdy %>% 
+  filter(common_name == "Cabezon") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_ca = median(count))
+View(fish_month_ca)
+
+#China rockfish
+fish_month_ch <- fish_mdy %>% 
+  filter(common_name == "China rockfish") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_ch = median(count))
+View(fish_month_ch)
+
+#Copper rockfish
+fish_month_co <- fish_mdy %>% 
+  filter(common_name == "Copper rockfish") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_co = median(count))
+View(fish_month_co)
+
+#Gopher rockfish
+fish_month_go <- fish_mdy %>% 
+  filter(common_name == "Gopher rockfish") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_go = median(count))
+View(fish_month_go)
+
+#Grass rockfish
+fish_month_gr <- fish_mdy %>% 
+  filter(common_name == "Grass rockfish") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_gr = median(count))
+View(fish_month_gr)
+
+#Kelp greenling
+fish_month_kg <- fish_mdy %>% 
+  filter(common_name == "Kelp greenling") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_kg = median(count))
+View(fish_month_kg)
+
+#Kelp rockfish
+fish_month_kr <- fish_mdy %>% 
+  filter(common_name == "Kelp rockfish") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_kr = median(count))
+View(fish_month_kr)
+
+#Olive rockfish
+fish_month_ol <- fish_mdy %>% 
+  filter(common_name == "Olive rockfish") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_ol = median(count))
+View(fish_month_ol)
+
+#Painted greenling
+fish_month_pg <- fish_mdy %>% 
+  filter(common_name == "Painted greenling") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_pg = median(count))
+View(fish_month_pg)
+
+#Quillback rockfish
+fish_month_qb <- fish_mdy %>% 
+  filter(common_name == "Quillback rockfish") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_qb = median(count))
+View(fish_month_qb)
+
+#Rock greenling
+fish_month_rg <- fish_mdy %>% 
+  filter(common_name == "Rock greenling") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_rg = median(count))
+View(fish_month_rg)
+
+#Treefish
+fish_month_tr <- fish_mdy %>% 
+  filter(common_name == "Treefish") %>% 
+  group_by(month) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_tr = median(count))
+View(fish_month_tr)
+```
+
+Weight-length relationship
+
+We decided to explore the weight-length relationship of all species. I decided to group by district since year isn't as reliable of a predictor because of increased user base throughout the years.
+```{r}
+#Summary table
+dis_lgt_wt <- fish_g %>% 
+  group_by(district) %>% 
+  summarize(mean_length_cm = mean(length_in_cm), mean_weight_g = mean(weight_in_g))
+View(dis_lgt_wt)
+```
+
+Read in RecFIN data
+```{r}
+recfin <- read_csv("recfin_fish.csv")
+View(recfin)
+```
+
+Comparing Fishbrain to RecFIN data
+
+This is the beginning of my comparisons between the Fishbrain and RecFIN data. I first decided to compare number of fish caught between the two. There are some discrepancies, particularly for the Wine district (Mendocino County).
+```{r}
+#Number of fish caught by district - Fishbrain
+fish_count_dis <- fish_dis %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count = median(count))
+View(fish_count_dis)
+
+#Number of fish caught by district - RecFIN
+recfin_dis <- recfin %>% 
+  group_by(DISTRICT_NAME) %>% 
+  summarize(mean_total_mortality_num = mean(SUM_TOTAL_MORTALITY_NUM))
+View(recfin_dis)
+
+#Total mortality in g - RecFIN
+recfin_g <- recfin %>% 
+  mutate(sum_total_mortality_g = SUM_TOTAL_MORTALITY_MT * 1000000) %>% 
+  group_by(DISTRICT_NAME) %>% 
+  summarize(mean_total_mortality_g = mean(sum_total_mortality_g))
+View(recfin_g)
+```
+
