@@ -13,3 +13,5 @@
 *.log
 
 *.csv
+
+*.DS_Store
