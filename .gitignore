@@ -1,0 +1,15 @@
+
+=== 
+.Rproj.user
+=== 
+.Rhistory
+=== 
+*.upb
+
+*.aux
+
+*.upa
+
+*.log
+
+*.csv
