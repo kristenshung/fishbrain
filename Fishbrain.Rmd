@@ -50,7 +50,7 @@ Extract day, month, year columns
 The caught_at_local_time column was a little difficult to work with on its own, so we decided to separate it into year, month, and day.
 ```{r}
 fish_mdy <- fish_dis %>% 
-  separate(caught_at_local_time, c('year', 'month', 'day'))
+  separate(caught_at_local_time, c('year', 'month', 'day')) 
 View(fish_mdy)
 ```
 
@@ -59,20 +59,22 @@ Species by year
 I first converted the units of fish length from m to cm so the values wouldn't be fractions. I then converted fish weight from kg to g for the same reason. I then decided to look at the relationship between species and year. This table shows the mean length and weight of each of the 12 species with lengths and weights recorded from 2018-2023.
 ```{r}
 #Convert length to cm
-fish_cm <- fish_mdy %>% 
-  mutate(length_in_cm = length_in_m * 100) %>% 
+fish_mm <- fish_mdy %>% 
+  mutate(length_in_mm = length_in_m * 1000) %>% 
   drop_na()
 
 #Convert weight to g
-fish_g <- fish_cm %>% 
-  mutate(weight_in_g = weight_in_kg * 1000)
+fish_g <- fish_mm %>% 
+  mutate(weight_in_g = weight_in_kg * 1000) %>% 
+  mutate_at(vars(district), as.factor) %>% 
+  mutate(district = fct_relevel(district, c("Central", "Bay Area", "Wine", "Redwood")))
 View(fish_g)
 
 #Summary table
 species_yr <- fish_g %>% 
   group_by(year, common_name) %>% 
   summarize_if(is.numeric, mean) %>% 
-  select(year, common_name, length_in_cm, weight_in_g)
+  select(year, common_name, length_in_mm, weight_in_g)
 View(species_yr)
 
 #NOTE: Gopher rockfish, kelp rockfish, painted greenling, and treefish were excluded from this analysis because their length values were all NA.
@@ -85,7 +87,7 @@ I then decided to look at the relationship between species and district. This ta
 species_dis <- fish_g %>% 
   group_by(district, common_name) %>% 
   summarize_if(is.numeric, mean) %>% 
-  select(district, common_name, length_in_cm, weight_in_g)
+  select(district, common_name, length_in_mm, weight_in_g)
 View(species_dis)
 
 #NOTE: Gopher rockfish, kelp rockfish, painted greenling, and treefish were excluded from this analysis because their length values were all NA.
@@ -98,7 +100,7 @@ This first plot shows the relationship between species and length.
 #Summary table
 species_lgt <- fish_cm %>% 
   group_by(common_name) %>% 
-  summarize(mean_length_cm = mean(length_in_cm)) 
+  summarize(mean_length_cm = mean(length_in_mm)) 
 View(species_lgt)
   
 #Graph
@@ -106,7 +108,7 @@ species_lgt %>%
   ggplot(aes(common_name, mean_length_cm)) + 
   geom_point() + 
   ylim(0, 50) +
-  labs(x = "Species", y = "Mean Length (cm)") + 
+  labs(x = "Species", y = "Mean Length (mm)") + 
   theme(axis.text.x = element_text(angle = 60, hjust = 1))
 
 #NOTE: Gopher rockfish, kelp rockfish, painted greenling, and treefish were excluded from this analysis because their length values were all NA.
@@ -119,7 +121,7 @@ This second plot shows the mean length for each district.
 #Summary table
 dis_lgt <- fish_cm %>% 
   group_by(district) %>% 
-  summarize(mean_length_cm = mean(length_in_cm))
+  summarize(mean_length_cm = mean(length_in_mm))
 View(dis_lgt)
 
 #Graph
@@ -127,7 +129,7 @@ dis_lgt %>%
   ggplot(aes(district, mean_length_cm)) +
   geom_point() + 
   ylim(0, 50) +
-  labs(x = "District", y = "Mean Length (cm)")
+  labs(x = "District", y = "Mean Length (mm)")
 
 #NOTE: Gopher rockfish, kelp rockfish, painted greenling, and treefish were excluded from this analysis because their length values were all NA.
 ```
@@ -280,15 +282,15 @@ View(recfin)
 
 Comparing Fishbrain to RecFIN data
 
-Weight-length relationship - Fishbrain
+Weight and length analyses  - Fishbrain
 ```{r}
 #Length by district, species
 fish_g %>% 
-  ggplot(aes(district, length_in_cm)) +
+  ggplot(aes(district, length_in_mm)) +
   geom_boxplot() +
   facet_wrap(vars(common_name)) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-  labs(x = "District", y = "Length (cm)")
+  labs(x = "District", y = "Length (mm)")
 
 #Weight by district, species
 fish_g %>% 
@@ -301,12 +303,12 @@ fish_g %>%
 
 #Length by year, district
 fish_g %>% 
-  ggplot(aes(year, length_in_cm, color = district)) +
+  ggplot(aes(year, length_in_mm, color = district)) +
   scale_color_viridis(discrete = TRUE) +
   geom_point() +
   facet_wrap(vars(common_name)) + 
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-  labs(x = "Year", y = "Length (cm)", color = "District")
+  labs(x = "Year", y = "Length (mm)", color = "District")
 
 #Weight by year, district
 fish_g %>% 
@@ -320,12 +322,12 @@ fish_g %>%
 
 #Length by month, district
 fish_g %>% 
-  ggplot(aes(month, length_in_cm, color = district)) +
+  ggplot(aes(month, length_in_mm, color = district)) +
   scale_color_viridis(discrete = TRUE) +
   geom_point() +
   facet_wrap(vars(common_name)) + 
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-  labs(x = "Month", y = "Length (cm)", color = "District")
+  labs(x = "Month", y = "Length (mm)", color = "District")
 
 #Weight by month, district
 fish_g %>% 
@@ -343,12 +345,19 @@ Weight analysis - RecFIN
 ```{r}
 #Create new column with weight in g
 recfin_g <- recfin %>% 
-  mutate(sum_total_mortality_g = SUM_TOTAL_MORTALITY_MT * 1000000)
+  mutate(sum_total_mortality_g = SUM_TOTAL_MORTALITY_MT * 1000000) %>% 
+  mutate(district = case_when(grepl("Bay Area", DISTRICT_NAME) ~ "Bay Area",
+                              grepl("Central", DISTRICT_NAME) ~ "Central",
+                              grepl("Wine", DISTRICT_NAME) ~ "Wine",
+                              grepl("Redwood", DISTRICT_NAME) ~ "Redwood",
+                              .default = DISTRICT_NAME)) %>% 
+  mutate_at(vars(district), as.factor) %>% 
+  mutate(district = fct_relevel(district, c("Central", "Bay Area", "Wine", "Redwood")))
 View(recfin_g)
 
 #Weight by year, district
 recfin_g %>% 
-  ggplot(aes(RECFIN_YEAR, sum_total_mortality_g, color = DISTRICT_NAME)) +
+  ggplot(aes(RECFIN_YEAR, sum_total_mortality_g, color = district)) +
   scale_color_viridis(discrete = TRUE) +
   geom_point() +
   facet_wrap(vars(SPECIES_NAME)) + 
@@ -365,9 +374,24 @@ recfin_g %>%
   labs(x = "Month", y = "Weight (g)", color = "District")
 ```
 
+Weight-length relationship - Fishbrain
+```{r}
+fish_g %>% 
+  ggplot(aes(length_in_mm, weight_in_g)) +
+  geom_point() +
+  facet_wrap(vars(common_name)) +
+  ylim(0, 6000) + 
+  labs(x = "Length (mm)", y = "Weight (g)")
+```
 
 Number of fish by district - Fishbrain & RecFIN
 ```{r}
+#All species
+fish_summary <- fish_mdy %>% 
+  group_by(common_name) %>% 
+  tally()
+View(fish_summary)
+
 #Black and yellow rockfish 
 #Fishbrain
 fish_dis_by <- fish_mdy %>% 
