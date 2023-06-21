@@ -4,11 +4,17 @@ output: html_document
 date: "2023-06-09"
 ---
 
+Install viridis package
+```{r}
+install.packages("viridis")
+```
+
 Load packages
 ```{r}
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
+library(viridis)
 ```
 
 Read in Fishbrain data
@@ -266,45 +272,357 @@ fish_month_tr <- fish_mdy %>%
 View(fish_month_tr)
 ```
 
-Weight-length relationship
-
-We decided to explore the weight-length relationship of all species. I decided to group by district since year isn't as reliable of a predictor because of increased user base throughout the years.
-```{r}
-#Summary table
-dis_lgt_wt <- fish_g %>% 
-  group_by(district) %>% 
-  summarize(mean_length_cm = mean(length_in_cm), mean_weight_g = mean(weight_in_g))
-View(dis_lgt_wt)
-```
-
 Read in RecFIN data
 ```{r}
-recfin <- read_csv("recfin_fish.csv")
+recfin <- read_csv("recfin.csv")
 View(recfin)
 ```
 
 Comparing Fishbrain to RecFIN data
 
-This is the beginning of my comparisons between the Fishbrain and RecFIN data. I first decided to compare number of fish caught between the two. There are some discrepancies, particularly for the Wine district (Mendocino County).
+Weight-length relationship - Fishbrain
 ```{r}
-#Number of fish caught by district - Fishbrain
-fish_count_dis <- fish_dis %>% 
+#Length by district, species
+fish_g %>% 
+  ggplot(aes(district, length_in_cm)) +
+  geom_boxplot() +
+  facet_wrap(vars(common_name)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = "District", y = "Length (cm)")
+
+#Weight by district, species
+fish_g %>% 
+  ggplot(aes(district, weight_in_g)) +
+  geom_boxplot() +
+  facet_wrap(vars(common_name)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = "District", y = "Weight (g)") +
+  ylim(0, 6000)
+
+#Length by year, district
+fish_g %>% 
+  ggplot(aes(year, length_in_cm, color = district)) +
+  scale_color_viridis(discrete = TRUE) +
+  geom_point() +
+  facet_wrap(vars(common_name)) + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = "Year", y = "Length (cm)", color = "District")
+
+#Weight by year, district
+fish_g %>% 
+  ggplot(aes(year, weight_in_g, color = district)) +
+  scale_color_viridis(discrete = TRUE) +
+  geom_point() +
+  facet_wrap(vars(common_name)) + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = "Year", y = "Weight (g)", color = "District") + 
+  ylim(0, 6000)
+
+#Length by month, district
+fish_g %>% 
+  ggplot(aes(month, length_in_cm, color = district)) +
+  scale_color_viridis(discrete = TRUE) +
+  geom_point() +
+  facet_wrap(vars(common_name)) + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = "Month", y = "Length (cm)", color = "District")
+
+#Weight by month, district
+fish_g %>% 
+  ggplot(aes(month, weight_in_g, color = district)) +
+  scale_color_viridis(discrete = TRUE) +
+  geom_point() +
+  facet_wrap(vars(common_name)) + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = "Month", y = "Weight (g)", color = "District") + 
+  ylim(0, 6000)
+```
+
+
+Weight analysis - RecFIN
+```{r}
+#Create new column with weight in g
+recfin_g <- recfin %>% 
+  mutate(sum_total_mortality_g = SUM_TOTAL_MORTALITY_MT * 1000000)
+View(recfin_g)
+
+#Weight by year, district
+recfin_g %>% 
+  ggplot(aes(RECFIN_YEAR, sum_total_mortality_g, color = DISTRICT_NAME)) +
+  scale_color_viridis(discrete = TRUE) +
+  geom_point() +
+  facet_wrap(vars(SPECIES_NAME)) + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = "Year", y = "Weight (g)", color = "District") 
+
+#Weight by month, district
+recfin_g %>% 
+  ggplot(aes(RECFIN_MONTH, sum_total_mortality_g, color = DISTRICT_NAME)) +
+  scale_color_viridis(discrete = TRUE) +
+  geom_point() +
+  facet_wrap(vars(SPECIES_NAME)) + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = "Month", y = "Weight (g)", color = "District")
+```
+
+
+Number of fish by district - Fishbrain & RecFIN
+```{r}
+#Black and yellow rockfish 
+#Fishbrain
+fish_dis_by <- fish_mdy %>% 
+  filter(common_name == "Black and yellow rockfish") %>% 
   group_by(district) %>% 
   mutate(count = n()) %>% 
-  summarize(fish_count = median(count))
-View(fish_count_dis)
-
-#Number of fish caught by district - RecFIN
-recfin_dis <- recfin %>% 
+  summarize(fish_count_by = median(count))
+View(fish_dis_by)
+#RecFIN
+recfin_dis_by <- recfin %>% 
+  filter(SPECIES_NAME == "Black And Yellow Rockfish") %>% 
   group_by(DISTRICT_NAME) %>% 
-  summarize(mean_total_mortality_num = mean(SUM_TOTAL_MORTALITY_NUM))
-View(recfin_dis)
+  mutate(count = n()) %>% 
+  summarize(recfin_count_by = median(count))
+View(recfin_dis_by)
 
-#Total mortality in g - RecFIN
-recfin_g <- recfin %>% 
-  mutate(sum_total_mortality_g = SUM_TOTAL_MORTALITY_MT * 1000000) %>% 
+#Black rockfish
+#Fishbrain
+fish_dis_bla <- fish_mdy %>% 
+  filter(common_name == "Black rockfish") %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_bla = median(count))
+View(fish_dis_bla)
+#RecFIN
+recfin_dis_bla <- recfin %>% 
+  filter(SPECIES_NAME == "Black Rockfish") %>% 
   group_by(DISTRICT_NAME) %>% 
-  summarize(mean_total_mortality_g = mean(sum_total_mortality_g))
-View(recfin_g)
+  mutate(count = n()) %>% 
+  summarize(recfin_count_bla = median(count))
+View(recfin_dis_bla)
+
+#Blue rockfish
+#Fishbrain
+fish_dis_blu <- fish_mdy %>% 
+  filter(common_name == "Blue rockfish") %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_blu = median(count))
+View(fish_dis_blu)
+#RecFIN
+recfin_dis_blu <- recfin %>% 
+  filter(SPECIES_NAME == "Blue Rockfish") %>% 
+  group_by(DISTRICT_NAME) %>% 
+  mutate(count = n()) %>% 
+  summarize(recfin_count_blu = median(count))
+View(recfin_dis_blu)
+
+#Brown rockfish
+#Fishbrain
+fish_dis_br <- fish_mdy %>% 
+  filter(common_name == "Brown rockfish") %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_by = median(count))
+View(fish_dis_br)
+#RecFIN
+recfin_dis_br <- recfin %>% 
+  filter(SPECIES_NAME == "Brown Rockfish") %>% 
+  group_by(DISTRICT_NAME) %>% 
+  mutate(count = n()) %>% 
+  summarize(recfin_count_br = median(count))
+View(recfin_dis_br)
+
+#Cabezon
+#Fishbrain
+fish_dis_ca <- fish_mdy %>% 
+  filter(common_name == "Cabezon") %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_ca = median(count))
+View(fish_dis_ca)
+#RecFIN
+recfin_dis_ca <- recfin %>% 
+  filter(SPECIES_NAME == "Cabezon") %>% 
+  group_by(DISTRICT_NAME) %>% 
+  mutate(count = n()) %>% 
+  summarize(recfin_count_ca = median(count))
+View(recfin_dis_ca)
+
+#China rockfish
+#Fishbrain
+fish_dis_ch <- fish_mdy %>% 
+  filter(common_name == "China rockfish") %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_ch = median(count))
+View(fish_dis_ch)
+#RecFIN
+recfin_dis_ch <- recfin %>% 
+  filter(SPECIES_NAME == "China Rockfish") %>% 
+  group_by(DISTRICT_NAME) %>% 
+  mutate(count = n()) %>% 
+  summarize(recfin_count_ch = median(count))
+View(recfin_dis_ch)
+
+#Copper rockfish
+#Fishbrain
+fish_dis_co <- fish_mdy %>% 
+  filter(common_name == "Copper rockfish") %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_co = median(count))
+View(fish_dis_co)
+#RecFIN
+recfin_dis_co <- recfin %>% 
+  filter(SPECIES_NAME == "Copper Rockfish") %>% 
+  group_by(DISTRICT_NAME) %>% 
+  mutate(count = n()) %>% 
+  summarize(recfin_count_co = median(count))
+View(recfin_dis_co)
+
+#Gopher rockfish
+#Fishbrain
+fish_dis_go <- fish_mdy %>% 
+  filter(common_name == "Gopher rockfish") %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_go = median(count))
+View(fish_dis_go)
+#RecFIN
+recfin_dis_go <- recfin %>% 
+  filter(SPECIES_NAME == "Gopher Rockfish") %>% 
+  group_by(DISTRICT_NAME) %>% 
+  mutate(count = n()) %>% 
+  summarize(recfin_count_go = median(count))
+View(recfin_dis_go)
+
+#Grass rockfish
+#Fishbrain
+fish_dis_gr <- fish_mdy %>% 
+  filter(common_name == "Grass rockfish") %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_gr = median(count))
+View(fish_dis_gr)
+#RecFIN
+recfin_dis_gr <- recfin %>% 
+  filter(SPECIES_NAME == "Grass Rockfish") %>% 
+  group_by(DISTRICT_NAME) %>% 
+  mutate(count = n()) %>% 
+  summarize(recfin_count_gr = median(count))
+View(recfin_dis_gr)
+
+#Kelp greenling
+#Fishbrain
+fish_dis_kg <- fish_mdy %>% 
+  filter(common_name == "Kelp greenling") %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_kg = median(count))
+View(fish_dis_kg)
+#RecFIN
+recfin_dis_kg <- recfin %>% 
+  filter(SPECIES_NAME == "Kelp Greenling") %>% 
+  group_by(DISTRICT_NAME) %>% 
+  mutate(count = n()) %>% 
+  summarize(recfin_count_kg = median(count))
+View(recfin_dis_kg)
+
+#Kelp rockfish
+#Fishbrain
+fish_dis_kr <- fish_mdy %>% 
+  filter(common_name == "Kelp rockfish") %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_by = median(count))
+View(fish_dis_kr)
+#RecFIN
+recfin_dis_kr <- recfin %>% 
+  filter(SPECIES_NAME == "Kelp Rockfish") %>% 
+  group_by(DISTRICT_NAME) %>% 
+  mutate(count = n()) %>% 
+  summarize(recfin_count_kr = median(count))
+View(recfin_dis_kr)
+
+#Olive rockfish
+#Fishbrain
+fish_dis_or <- fish_mdy %>% 
+  filter(common_name == "Olive rockfish") %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_or = median(count))
+View(fish_dis_or)
+#RecFIN
+recfin_dis_or <- recfin %>% 
+  filter(SPECIES_NAME == "Olive Rockfish") %>% 
+  group_by(DISTRICT_NAME) %>% 
+  mutate(count = n()) %>% 
+  summarize(recfin_count_or = median(count))
+View(recfin_dis_or)
+
+#Painted greenling
+#Fishbrain
+fish_dis_pg <- fish_mdy %>% 
+  filter(common_name == "Painted greenling") %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_pg = median(count))
+View(fish_dis_pg)
+#RecFIN
+recfin_dis_pg <- recfin %>% 
+  filter(SPECIES_NAME == "Painted Greenling") %>% 
+  group_by(DISTRICT_NAME) %>% 
+  mutate(count = n()) %>% 
+  summarize(recfin_count_pg = median(count))
+View(recfin_dis_pg)
+
+#Quillback rockfish
+#Fishbrain
+fish_dis_qb <- fish_mdy %>% 
+  filter(common_name == "Quillback rockfish") %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_qb = median(count))
+View(fish_dis_qb)
+#RecFIN
+recfin_dis_qb <- recfin %>% 
+  filter(SPECIES_NAME == "Quillback Rockfish") %>% 
+  group_by(DISTRICT_NAME) %>% 
+  mutate(count = n()) %>% 
+  summarize(recfin_count_qb = median(count))
+View(recfin_dis_qb)
+
+#Rock greenling
+#Fishbrain
+fish_dis_rg <- fish_mdy %>% 
+  filter(common_name == "Rock greenling") %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_rg = median(count))
+View(fish_dis_rg)
+#RecFIN
+recfin_dis_rg <- recfin %>% 
+  filter(SPECIES_NAME == "Rock Greenling") %>% 
+  group_by(DISTRICT_NAME) %>% 
+  mutate(count = n()) %>% 
+  summarize(recfin_count_rg = median(count))
+View(recfin_dis_rg)
+
+#Treefish
+#Fishbrain
+fish_dis_tr <- fish_mdy %>% 
+  filter(common_name == "Treefish") %>% 
+  group_by(district) %>% 
+  mutate(count = n()) %>% 
+  summarize(fish_count_tr = median(count))
+View(fish_dis_tr)
+#RecFIN
+recfin_dis_tr <- recfin %>% 
+  filter(SPECIES_NAME == "Treefish") %>% 
+  group_by(DISTRICT_NAME) %>% 
+  mutate(count = n()) %>% 
+  summarize(recfin_count_tr = median(count))
+View(recfin_dis_tr)
 ```
+
 
