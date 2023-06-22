@@ -20,7 +20,7 @@ library(viridis)
 Read in Fishbrain data
 ```{r}
 fishbrain <- read_csv("fishbrain.csv")
-View(fishbrain)
+#View(fishbrain)
 ```
 
 Filter to north of Pt. Conception
@@ -29,7 +29,7 @@ We decided to do this because the regulations in Southern district are complex.
 ```{r}
 fishbrain_nc <- fishbrain %>% 
   filter(latitude > 34.45)
-View(fishbrain_nc)
+#View(fishbrain_nc)
 ```
 
 Add districts
@@ -42,7 +42,7 @@ fish_dis <- fishbrain_nc %>%
                               latitude > 38.91 & latitude < 40.44 ~ 'Wine',
                               latitude > 40.44 ~ 'Redwood')
   )
-View(fish_dis)
+#View(fish_dis)
 ```
 
 Extract day, month, year columns
@@ -51,15 +51,31 @@ The caught_at_local_time column was a little difficult to work with on its own, 
 ```{r}
 fish_mdy <- fish_dis %>% 
   separate(caught_at_local_time, c('year', 'month', 'day')) 
-View(fish_mdy)
+#View(fish_mdy)
 ```
+
+Filter to species with over 40 observations
+```{r}
+#Numbers of all species
+fish_summary <- fish_mdy %>% 
+  group_by(common_name) %>% 
+  tally() %>% 
+  filter(n > 40)
+View(fish_summary)
+
+#Filter
+fish_pop <- fish_mdy %>% 
+  filter(common_name == "Cabezon" | common_name == "Grass rockfish" | common_name == "Black rockfish" | common_name == "Copper rockfish" | common_name == "Brown rockfish" | common_name == "Kelp greenling" | common_name == "Blue rockfish" | common_name == "China rockfish" | common_name == "Olive rockfish" | common_name == "Rock greenling")
+#View(fish_pop)
+```
+
 
 Species by year
 
 I first converted the units of fish length from m to cm so the values wouldn't be fractions. I then converted fish weight from kg to g for the same reason. I then decided to look at the relationship between species and year. This table shows the mean length and weight of each of the 12 species with lengths and weights recorded from 2018-2023.
 ```{r}
 #Convert length to cm
-fish_mm <- fish_mdy %>% 
+fish_mm <- fish_pop %>% 
   mutate(length_in_mm = length_in_m * 1000) %>% 
   drop_na()
 
@@ -68,14 +84,14 @@ fish_g <- fish_mm %>%
   mutate(weight_in_g = weight_in_kg * 1000) %>% 
   mutate_at(vars(district), as.factor) %>% 
   mutate(district = fct_relevel(district, c("Central", "Bay Area", "Wine", "Redwood")))
-View(fish_g)
+#View(fish_g)
 
 #Summary table
 species_yr <- fish_g %>% 
   group_by(year, common_name) %>% 
   summarize_if(is.numeric, mean) %>% 
   select(year, common_name, length_in_mm, weight_in_g)
-View(species_yr)
+#View(species_yr)
 
 #NOTE: Gopher rockfish, kelp rockfish, painted greenling, and treefish were excluded from this analysis because their length values were all NA.
 ```
@@ -277,7 +293,7 @@ View(fish_month_tr)
 Read in RecFIN data
 ```{r}
 recfin <- read_csv("recfin.csv")
-View(recfin)
+#View(recfin)
 ```
 
 Comparing Fishbrain to RecFIN data
@@ -353,22 +369,24 @@ recfin_g <- recfin %>%
                               .default = DISTRICT_NAME)) %>% 
   mutate_at(vars(district), as.factor) %>% 
   mutate(district = fct_relevel(district, c("Central", "Bay Area", "Wine", "Redwood")))
-View(recfin_g)
+#View(recfin_g)
 
 #Weight by year, district
 recfin_g %>% 
   ggplot(aes(RECFIN_YEAR, sum_total_mortality_g, color = district)) +
   scale_color_viridis(discrete = TRUE) +
-  geom_point() +
+  geom_boxplot() +
+  ylim(0, 5.0e+06) +
   facet_wrap(vars(SPECIES_NAME)) + 
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = "Year", y = "Weight (g)", color = "District") 
 
 #Weight by month, district
 recfin_g %>% 
-  ggplot(aes(RECFIN_MONTH, sum_total_mortality_g, color = DISTRICT_NAME)) +
+  ggplot(aes(RECFIN_MONTH, sum_total_mortality_g, color = district)) +
   scale_color_viridis(discrete = TRUE) +
-  geom_point() +
+  geom_boxplot() +
+  ylim(0, 5.0e+06) +
   facet_wrap(vars(SPECIES_NAME)) + 
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = "Month", y = "Weight (g)", color = "District")
@@ -386,12 +404,6 @@ fish_g %>%
 
 Number of fish by district - Fishbrain & RecFIN
 ```{r}
-#All species
-fish_summary <- fish_mdy %>% 
-  group_by(common_name) %>% 
-  tally()
-View(fish_summary)
-
 #Black and yellow rockfish 
 #Fishbrain
 fish_dis_by <- fish_mdy %>% 
