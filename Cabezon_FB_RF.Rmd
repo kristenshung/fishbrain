@@ -50,45 +50,52 @@ View(fish_ca)
 
 Count by district
 ```{r}
-fish_dis_ca <- fish_ca %>% 
+ca_dis <- fish_ca %>% 
   group_by(district) %>% 
   tally()
-View(fish_dis_ca)
+View(ca_dis)
 ```
 
 Length and weight analyses
 ```{r}
 #Convert length to mm
-fish_mm <- fish_ca %>% 
+ca_mm <- fish_ca %>% 
   mutate(length_in_mm = length_in_m * 1000)
 
 #Convert weight to g
-fish_g <- fish_mm %>% 
+ca_g <- ca_mm %>% 
   mutate(weight_in_g = weight_in_kg * 1000) %>% 
   mutate_at(vars(district), as.factor) %>% 
   mutate(district = fct_relevel(district, c("Central", "Bay Area", "Wine", "Redwood")))
-View(fish_g)
+View(ca_g)
 
 #Length by district
-fish_g %>% 
+ca_g %>% 
   ggplot(aes(district, length_in_mm)) +
   geom_boxplot() +
   labs(x = "District", y = "Length (mm)")
 
 #Weight by district
-fish_g %>% 
+ca_g %>% 
   ggplot(aes(district, weight_in_g)) +
   geom_boxplot() +
   labs(x = "District", y = "Weight (g)") +
   ylim(0, 6000)
 
 #Weight-length relationship
-fish_g %>% 
+ca_g %>% 
   ggplot(aes(length_in_mm, weight_in_g)) +
   geom_point() +
-  facet_wrap(vars(common_name)) +
   ylim(0, 6000) + 
   labs(x = "Length (mm)", y = "Weight (g)")
+
+#Summary table with means
+ca_lw <- ca_g %>% 
+  group_by(district) %>% 
+  drop_na() %>% 
+  summarize_at(.vars = vars(length_in_mm, weight_in_g),
+               .funs = c(mean = "mean"))
+View(ca_lw)
 ```
 
 
