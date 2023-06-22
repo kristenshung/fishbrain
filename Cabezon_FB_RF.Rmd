@@ -1,0 +1,94 @@
+---
+title: "Cabezon"
+output: html_document
+date: "2023-06-22"
+---
+
+Load packages
+```{r}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+```
+
+Read in Fishbrain data
+```{r}
+fishbrain <- read_csv("fishbrain.csv")
+View(fishbrain)
+```
+
+Filter to north of Pt. Conception
+```{r}
+fishbrain_nc <- fishbrain %>% 
+  filter(latitude > 34.45)
+#View(fishbrain_nc)
+```
+
+Add districts
+```{r}
+fish_dis <- fishbrain_nc %>% 
+  mutate(district = case_when(latitude > 34.45 & latitude < 37.18 ~ 'Central',
+                              latitude >= 37.18 & latitude < 38.91 ~ 'Bay Area',
+                              latitude > 38.91 & latitude < 40.44 ~ 'Wine',
+                              latitude > 40.44 ~ 'Redwood'))
+#View(fish_dis)
+```
+
+Extract day, month, year columns
+```{r}
+fish_mdy <- fish_dis %>% 
+  separate(caught_at_local_time, c('year', 'month', 'day')) 
+#View(fish_mdy)
+```
+
+Filter to cabezon only
+```{r}
+fish_ca <- fish_mdy %>% 
+  filter(common_name == "Cabezon")
+View(fish_ca)
+```
+
+Count by district
+```{r}
+fish_dis_ca <- fish_ca %>% 
+  group_by(district) %>% 
+  tally()
+View(fish_dis_ca)
+```
+
+Length and weight analyses
+```{r}
+#Convert length to mm
+fish_mm <- fish_ca %>% 
+  mutate(length_in_mm = length_in_m * 1000)
+
+#Convert weight to g
+fish_g <- fish_mm %>% 
+  mutate(weight_in_g = weight_in_kg * 1000) %>% 
+  mutate_at(vars(district), as.factor) %>% 
+  mutate(district = fct_relevel(district, c("Central", "Bay Area", "Wine", "Redwood")))
+View(fish_g)
+
+#Length by district
+fish_g %>% 
+  ggplot(aes(district, length_in_mm)) +
+  geom_boxplot() +
+  labs(x = "District", y = "Length (mm)")
+
+#Weight by district
+fish_g %>% 
+  ggplot(aes(district, weight_in_g)) +
+  geom_boxplot() +
+  labs(x = "District", y = "Weight (g)") +
+  ylim(0, 6000)
+
+#Weight-length relationship
+fish_g %>% 
+  ggplot(aes(length_in_mm, weight_in_g)) +
+  geom_point() +
+  facet_wrap(vars(common_name)) +
+  ylim(0, 6000) + 
+  labs(x = "Length (mm)", y = "Weight (g)")
+```
+
+

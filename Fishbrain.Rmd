@@ -1,6 +1,9 @@
 ---
 title: "Fishbrain"
-output: html_document
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
 date: "2023-06-09"
 ---
 
@@ -20,7 +23,7 @@ library(viridis)
 Read in Fishbrain data
 ```{r}
 fishbrain <- read_csv("fishbrain.csv")
-#View(fishbrain)
+View(fishbrain)
 ```
 
 Filter to north of Pt. Conception
@@ -66,15 +69,15 @@ View(fish_summary)
 #Filter
 fish_pop <- fish_mdy %>% 
   filter(common_name == "Cabezon" | common_name == "Grass rockfish" | common_name == "Black rockfish" | common_name == "Copper rockfish" | common_name == "Brown rockfish" | common_name == "Kelp greenling" | common_name == "Blue rockfish" | common_name == "China rockfish" | common_name == "Olive rockfish" | common_name == "Rock greenling")
-#View(fish_pop)
+View(fish_pop)
 ```
 
 
 Species by year
 
-I first converted the units of fish length from m to cm so the values wouldn't be fractions. I then converted fish weight from kg to g for the same reason. I then decided to look at the relationship between species and year. This table shows the mean length and weight of each of the 12 species with lengths and weights recorded from 2018-2023.
+I first converted the units of fish length from m to mm so the values wouldn't be fractions. I then converted fish weight from kg to g for the same reason. I then decided to look at the relationship between species and year. This table shows the mean length and weight of each of the 12 species with lengths and weights recorded from 2018-2023.
 ```{r}
-#Convert length to cm
+#Convert length to mm
 fish_mm <- fish_pop %>% 
   mutate(length_in_mm = length_in_m * 1000) %>% 
   drop_na()
@@ -114,14 +117,14 @@ Plot #1: length by species
 This first plot shows the relationship between species and length. 
 ```{r}
 #Summary table
-species_lgt <- fish_cm %>% 
+species_lgt <- fish_mm %>% 
   group_by(common_name) %>% 
-  summarize(mean_length_cm = mean(length_in_mm)) 
+  summarize(mean_length_mm = mean(length_in_mm)) 
 View(species_lgt)
   
 #Graph
 species_lgt %>% 
-  ggplot(aes(common_name, mean_length_cm)) + 
+  ggplot(aes(common_name, mean_length_mm)) + 
   geom_point() + 
   ylim(0, 50) +
   labs(x = "Species", y = "Mean Length (mm)") + 
@@ -135,14 +138,14 @@ Plot #2: length by district
 This second plot shows the mean length for each district.
 ```{r}
 #Summary table
-dis_lgt <- fish_cm %>% 
+dis_lgt <- fish_mm %>% 
   group_by(district) %>% 
-  summarize(mean_length_cm = mean(length_in_mm))
+  summarize(mean_length_mm = mean(length_in_mm))
 View(dis_lgt)
 
 #Graph
 dis_lgt %>% 
-  ggplot(aes(district, mean_length_cm)) +
+  ggplot(aes(district, mean_length_mm)) +
   geom_point() + 
   ylim(0, 50) +
   labs(x = "District", y = "Mean Length (mm)")
@@ -157,136 +160,119 @@ We decided to look at the number of fish caught for each month. Using the assump
 #All species
 fish_month <- fish_mdy %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count = median(count))
+  tally()
 View(fish_month)
 
 #Black and yellow rockfish
 fish_month_by <- fish_mdy %>% 
   filter(common_name == "Black and yellow rockfish") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_by = median(count))
+  tally()
 View(fish_month_by)
 
 #Black rockfish
 fish_month_bla <- fish_mdy %>% 
   filter(common_name == "Black rockfish") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_bla = median(count))
+  tally()
 View(fish_month_bla)
 
 #Blue rockfish
 fish_month_blu <- fish_mdy %>% 
   filter(common_name == "Blue rockfish") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_blu = median(count))
+  tally()
 View(fish_month_blu)
 
 #Brown rockfish
 fish_month_br <- fish_mdy %>% 
   filter(common_name == "Brown rockfish") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_br = median(count))
+  tally()
 View(fish_month_br)
 
 #Cabezon
 fish_month_ca <- fish_mdy %>% 
   filter(common_name == "Cabezon") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_ca = median(count))
+  tally()
 View(fish_month_ca)
 
 #China rockfish
 fish_month_ch <- fish_mdy %>% 
   filter(common_name == "China rockfish") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_ch = median(count))
+  tally()
 View(fish_month_ch)
 
 #Copper rockfish
 fish_month_co <- fish_mdy %>% 
   filter(common_name == "Copper rockfish") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_co = median(count))
+  tally()
 View(fish_month_co)
 
 #Gopher rockfish
 fish_month_go <- fish_mdy %>% 
   filter(common_name == "Gopher rockfish") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_go = median(count))
+  tally()
 View(fish_month_go)
 
 #Grass rockfish
 fish_month_gr <- fish_mdy %>% 
   filter(common_name == "Grass rockfish") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_gr = median(count))
+  tally()
 View(fish_month_gr)
 
 #Kelp greenling
 fish_month_kg <- fish_mdy %>% 
   filter(common_name == "Kelp greenling") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_kg = median(count))
+  tally()
 View(fish_month_kg)
 
 #Kelp rockfish
 fish_month_kr <- fish_mdy %>% 
   filter(common_name == "Kelp rockfish") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_kr = median(count))
+  tally() 
 View(fish_month_kr)
 
 #Olive rockfish
 fish_month_ol <- fish_mdy %>% 
   filter(common_name == "Olive rockfish") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_ol = median(count))
+  tally() 
 View(fish_month_ol)
 
 #Painted greenling
 fish_month_pg <- fish_mdy %>% 
   filter(common_name == "Painted greenling") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_pg = median(count))
+  tally() 
 View(fish_month_pg)
 
 #Quillback rockfish
 fish_month_qb <- fish_mdy %>% 
   filter(common_name == "Quillback rockfish") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_qb = median(count))
+  tally() 
 View(fish_month_qb)
 
 #Rock greenling
 fish_month_rg <- fish_mdy %>% 
   filter(common_name == "Rock greenling") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_rg = median(count))
+  tally() 
 View(fish_month_rg)
 
 #Treefish
 fish_month_tr <- fish_mdy %>% 
   filter(common_name == "Treefish") %>% 
   group_by(month) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_tr = median(count))
+  tally() 
 View(fish_month_tr)
 ```
 
@@ -409,15 +395,13 @@ Number of fish by district - Fishbrain & RecFIN
 fish_dis_by <- fish_mdy %>% 
   filter(common_name == "Black and yellow rockfish") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_by = median(count))
+  tally() 
 View(fish_dis_by)
 #RecFIN
 recfin_dis_by <- recfin %>% 
   filter(SPECIES_NAME == "Black And Yellow Rockfish") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_by = median(count))
+  tally() 
 View(recfin_dis_by)
 
 #Black rockfish
@@ -425,15 +409,13 @@ View(recfin_dis_by)
 fish_dis_bla <- fish_mdy %>% 
   filter(common_name == "Black rockfish") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_bla = median(count))
+  tally() 
 View(fish_dis_bla)
 #RecFIN
 recfin_dis_bla <- recfin %>% 
   filter(SPECIES_NAME == "Black Rockfish") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_bla = median(count))
+  tally() 
 View(recfin_dis_bla)
 
 #Blue rockfish
@@ -441,15 +423,13 @@ View(recfin_dis_bla)
 fish_dis_blu <- fish_mdy %>% 
   filter(common_name == "Blue rockfish") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_blu = median(count))
+  tally() 
 View(fish_dis_blu)
 #RecFIN
 recfin_dis_blu <- recfin %>% 
   filter(SPECIES_NAME == "Blue Rockfish") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_blu = median(count))
+  tally() 
 View(recfin_dis_blu)
 
 #Brown rockfish
@@ -457,15 +437,13 @@ View(recfin_dis_blu)
 fish_dis_br <- fish_mdy %>% 
   filter(common_name == "Brown rockfish") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_by = median(count))
+  tally() 
 View(fish_dis_br)
 #RecFIN
 recfin_dis_br <- recfin %>% 
   filter(SPECIES_NAME == "Brown Rockfish") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_br = median(count))
+  tally() 
 View(recfin_dis_br)
 
 #Cabezon
@@ -473,15 +451,13 @@ View(recfin_dis_br)
 fish_dis_ca <- fish_mdy %>% 
   filter(common_name == "Cabezon") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_ca = median(count))
+  tally() 
 View(fish_dis_ca)
 #RecFIN
 recfin_dis_ca <- recfin %>% 
   filter(SPECIES_NAME == "Cabezon") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_ca = median(count))
+  tally() 
 View(recfin_dis_ca)
 
 #China rockfish
@@ -489,15 +465,13 @@ View(recfin_dis_ca)
 fish_dis_ch <- fish_mdy %>% 
   filter(common_name == "China rockfish") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_ch = median(count))
+  tally() 
 View(fish_dis_ch)
 #RecFIN
 recfin_dis_ch <- recfin %>% 
   filter(SPECIES_NAME == "China Rockfish") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_ch = median(count))
+  tally() 
 View(recfin_dis_ch)
 
 #Copper rockfish
@@ -505,15 +479,13 @@ View(recfin_dis_ch)
 fish_dis_co <- fish_mdy %>% 
   filter(common_name == "Copper rockfish") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_co = median(count))
+  tally() 
 View(fish_dis_co)
 #RecFIN
 recfin_dis_co <- recfin %>% 
   filter(SPECIES_NAME == "Copper Rockfish") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_co = median(count))
+  tally() 
 View(recfin_dis_co)
 
 #Gopher rockfish
@@ -521,15 +493,13 @@ View(recfin_dis_co)
 fish_dis_go <- fish_mdy %>% 
   filter(common_name == "Gopher rockfish") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_go = median(count))
+  tally() 
 View(fish_dis_go)
 #RecFIN
 recfin_dis_go <- recfin %>% 
   filter(SPECIES_NAME == "Gopher Rockfish") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_go = median(count))
+  tally() 
 View(recfin_dis_go)
 
 #Grass rockfish
@@ -537,15 +507,13 @@ View(recfin_dis_go)
 fish_dis_gr <- fish_mdy %>% 
   filter(common_name == "Grass rockfish") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_gr = median(count))
+  tally() 
 View(fish_dis_gr)
 #RecFIN
 recfin_dis_gr <- recfin %>% 
   filter(SPECIES_NAME == "Grass Rockfish") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_gr = median(count))
+  tally() 
 View(recfin_dis_gr)
 
 #Kelp greenling
@@ -553,15 +521,13 @@ View(recfin_dis_gr)
 fish_dis_kg <- fish_mdy %>% 
   filter(common_name == "Kelp greenling") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_kg = median(count))
+  tally() 
 View(fish_dis_kg)
 #RecFIN
 recfin_dis_kg <- recfin %>% 
   filter(SPECIES_NAME == "Kelp Greenling") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_kg = median(count))
+  tally() 
 View(recfin_dis_kg)
 
 #Kelp rockfish
@@ -569,15 +535,13 @@ View(recfin_dis_kg)
 fish_dis_kr <- fish_mdy %>% 
   filter(common_name == "Kelp rockfish") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_by = median(count))
+  tally() 
 View(fish_dis_kr)
 #RecFIN
 recfin_dis_kr <- recfin %>% 
   filter(SPECIES_NAME == "Kelp Rockfish") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_kr = median(count))
+  tally() 
 View(recfin_dis_kr)
 
 #Olive rockfish
@@ -585,15 +549,13 @@ View(recfin_dis_kr)
 fish_dis_or <- fish_mdy %>% 
   filter(common_name == "Olive rockfish") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_or = median(count))
+  tally() 
 View(fish_dis_or)
 #RecFIN
 recfin_dis_or <- recfin %>% 
   filter(SPECIES_NAME == "Olive Rockfish") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_or = median(count))
+  tally() 
 View(recfin_dis_or)
 
 #Painted greenling
@@ -601,15 +563,13 @@ View(recfin_dis_or)
 fish_dis_pg <- fish_mdy %>% 
   filter(common_name == "Painted greenling") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_pg = median(count))
+  tally() 
 View(fish_dis_pg)
 #RecFIN
 recfin_dis_pg <- recfin %>% 
   filter(SPECIES_NAME == "Painted Greenling") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_pg = median(count))
+  tally() 
 View(recfin_dis_pg)
 
 #Quillback rockfish
@@ -617,15 +577,13 @@ View(recfin_dis_pg)
 fish_dis_qb <- fish_mdy %>% 
   filter(common_name == "Quillback rockfish") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_qb = median(count))
+  tally() 
 View(fish_dis_qb)
 #RecFIN
 recfin_dis_qb <- recfin %>% 
   filter(SPECIES_NAME == "Quillback Rockfish") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_qb = median(count))
+  tally() 
 View(recfin_dis_qb)
 
 #Rock greenling
@@ -633,15 +591,13 @@ View(recfin_dis_qb)
 fish_dis_rg <- fish_mdy %>% 
   filter(common_name == "Rock greenling") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_rg = median(count))
+  tally() 
 View(fish_dis_rg)
 #RecFIN
 recfin_dis_rg <- recfin %>% 
   filter(SPECIES_NAME == "Rock Greenling") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_rg = median(count))
+  tally() 
 View(recfin_dis_rg)
 
 #Treefish
@@ -649,15 +605,13 @@ View(recfin_dis_rg)
 fish_dis_tr <- fish_mdy %>% 
   filter(common_name == "Treefish") %>% 
   group_by(district) %>% 
-  mutate(count = n()) %>% 
-  summarize(fish_count_tr = median(count))
+  tally() 
 View(fish_dis_tr)
 #RecFIN
 recfin_dis_tr <- recfin %>% 
   filter(SPECIES_NAME == "Treefish") %>% 
   group_by(DISTRICT_NAME) %>% 
-  mutate(count = n()) %>% 
-  summarize(recfin_count_tr = median(count))
+  tally() 
 View(recfin_dis_tr)
 ```
 
