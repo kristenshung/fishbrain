@@ -4,17 +4,23 @@ output: html_document
 date: "2023-06-22"
 ---
 
+Install viridis package
+```{r}
+install.packages("viridis")
+```
+
 Load packages
 ```{r}
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
+library(viridis)
 ```
 
 Read in Fishbrain data
 ```{r}
 fishbrain <- read_csv("fishbrain.csv")
-View(fishbrain)
+#View(fishbrain)
 ```
 
 Filter to north of Pt. Conception
@@ -45,7 +51,7 @@ Filter to cabezon only
 ```{r}
 fish_ca <- fish_mdy %>% 
   filter(common_name == "Cabezon")
-View(fish_ca)
+#View(fish_ca)
 ```
 
 Count by district
@@ -53,7 +59,7 @@ Count by district
 ca_dis <- fish_ca %>% 
   group_by(district) %>% 
   tally()
-View(ca_dis)
+#View(ca_dis)
 ```
 
 Length and weight analyses
@@ -96,6 +102,17 @@ ca_lw <- ca_g %>%
   summarize_at(.vars = vars(length_in_mm, weight_in_g),
                .funs = c(mean = "mean"))
 View(ca_lw)
-```
 
+#Length density plot
+ca_g %>% 
+  ggplot(aes(length_in_mm, color = district, fill = district)) +
+  scale_color_viridis(discrete = TRUE) +
+  geom_density(alpha = 0.1)
+
+#Weight density plot
+ca_g %>% 
+  ggplot(aes(weight_in_g, color = district, fill = district)) +
+  scale_color_viridis(discrete = TRUE) +
+  geom_density(alpha = 0.1) 
+```
 
