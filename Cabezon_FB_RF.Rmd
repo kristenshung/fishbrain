@@ -17,102 +17,136 @@ library(ggplot2)
 library(viridis)
 ```
 
-Read in Fishbrain data
+Read in  data
 ```{r}
 fishbrain <- read_csv("fishbrain.csv")
 #View(fishbrain)
+recfin <- read_csv("recfin.csv")
+#View(recfin)
+recfin_bio <- read_csv("recfin_bio.csv")
+#View(recfin_bio)
 ```
 
-Filter to north of Pt. Conception
+Edit Fishbrain data
 ```{r}
-fishbrain_nc <- fishbrain %>% 
-  filter(latitude > 34.45)
-#View(fishbrain_nc)
-```
-
-Add districts
-```{r}
-fish_dis <- fishbrain_nc %>% 
-  mutate(district = case_when(latitude > 34.45 & latitude < 37.18 ~ 'Central',
+fish_ca <- fishbrain %>% 
+  filter(latitude > 34.45) %>% 
+   mutate(district = case_when(latitude > 34.45 & latitude < 37.18 ~ 'Central',
                               latitude >= 37.18 & latitude < 38.91 ~ 'Bay Area',
                               latitude > 38.91 & latitude < 40.44 ~ 'Wine',
-                              latitude > 40.44 ~ 'Redwood'))
-#View(fish_dis)
+                              latitude > 40.44 ~ 'Redwood')) %>% 
+  separate(caught_at_local_time, c('year', 'month', 'day')) %>%  
+  filter(common_name == "Cabezon") %>% 
+  mutate(weight_in_g = weight_in_kg * 1000) %>% 
+  mutate(length_in_mm = length_in_m * 1000) %>% 
+  mutate_at(vars(district), as.factor) %>% 
+  mutate(district = fct_relevel(district, c("Central", "Bay Area", "Wine", "Redwood")))
+View(fish_ca)
 ```
 
-Extract day, month, year columns
+Edit RecFIN Data
 ```{r}
-fish_mdy <- fish_dis %>% 
-  separate(caught_at_local_time, c('year', 'month', 'day')) 
-#View(fish_mdy)
-```
-
-Filter to cabezon only
-```{r}
-fish_ca <- fish_mdy %>% 
-  filter(common_name == "Cabezon")
-#View(fish_ca)
+recfin_ca <- recfin_bio %>% 
+  filter(grepl("CENTRAL", RECFIN_PORT_NAME) | grepl("BAY AREA", RECFIN_PORT_NAME) | grepl("WINE", RECFIN_PORT_NAME) | grepl("REDWOOD", RECFIN_PORT_NAME)) %>% 
+  filter(SPECIES_NAME == "CABEZON") %>% 
+  separate(RECFIN_DATE, c("month", "day", "year")) %>% 
+  mutate(district = case_when(grepl("CENTRAL", RECFIN_PORT_NAME) ~ "Central",
+                              grepl("BAY AREA", RECFIN_PORT_NAME) ~ "Bay Area",
+                              grepl("WINE", RECFIN_PORT_NAME) ~ "Wine",
+                              grepl("REDWOOD", RECFIN_PORT_NAME) ~ "Redwood",
+                              .default = RECFIN_PORT_NAME)) %>% 
+  mutate_at(vars(district), as.factor) %>% 
+  mutate(district = fct_relevel(district, c("Central", "Bay Area", "Wine", "Redwood"))) %>% 
+  mutate(agency_weight_g = AGENCY_WEIGHT * 1000)
+View(recfin_ca)
 ```
 
 Count by district
 ```{r}
-ca_dis <- fish_ca %>% 
+#Fishbrain
+ca_fb_dis <- fish_ca %>% 
   group_by(district) %>% 
   tally()
-#View(ca_dis)
+View(ca_dis)
+
+#RecFIN
+ca_rf_dis <- recfin %>% 
+  group_by(DISTRICT_NAME) %>% 
+  tally()
+View(ca_rf_dis)
 ```
 
-Length and weight analyses
+Length and weight analyses 
 ```{r}
-#Convert length to mm
-ca_mm <- fish_ca %>% 
-  mutate(length_in_mm = length_in_m * 1000)
-
-#Convert weight to g
-ca_g <- ca_mm %>% 
-  mutate(weight_in_g = weight_in_kg * 1000) %>% 
-  mutate_at(vars(district), as.factor) %>% 
-  mutate(district = fct_relevel(district, c("Central", "Bay Area", "Wine", "Redwood")))
-View(ca_g)
-
-#Length by district
-ca_g %>% 
+#Length by district - Fishbrain
+fish_ca %>% 
   ggplot(aes(district, length_in_mm)) +
   geom_boxplot() +
   labs(x = "District", y = "Length (mm)")
+#Length by district - RecFIN
+recfin_ca %>% 
+  ggplot(aes(district, RECFIN_LENGTH_MM)) + 
+  geom_boxplot() + 
+  labs(x = "District", y = "Length (mm)")
 
-#Weight by district
-ca_g %>% 
+#Weight by district - Fishbrain
+fish_ca %>% 
   ggplot(aes(district, weight_in_g)) +
   geom_boxplot() +
   labs(x = "District", y = "Weight (g)") +
   ylim(0, 6000)
+#Weight by district - RecFIN
+recfin_ca %>% 
+  ggplot(aes(district, agency_weight_g)) + 
+  geom_boxplot() + 
+  labs(x = "District", y = "Weight (g)")
 
-#Weight-length relationship
-ca_g %>% 
+#Weight-length relationship - Fishbrain
+fish_ca %>% 
   ggplot(aes(length_in_mm, weight_in_g)) +
   geom_point() +
   ylim(0, 6000) + 
   labs(x = "Length (mm)", y = "Weight (g)")
+#Weight-length relationship - RecFIN
+recfin_ca %>% 
+  ggplot(aes(RECFIN_LENGTH_MM, agency_weight_g)) +
+  geom_point() +
+  labs(x = "Length (mm)", y = "Weight (g)")
 
-#Summary table with means
-ca_lw <- ca_g %>% 
+#Summary table with means - Fishbrain
+fb_ca_lw <- fish_ca %>% 
   group_by(district) %>% 
   drop_na() %>% 
   summarize_at(.vars = vars(length_in_mm, weight_in_g),
                .funs = c(mean = "mean"))
-View(ca_lw)
+View(fb_ca_lw)
+#Summary table with means - RecFIN
+rf_ca_lw <- recfin_ca %>% 
+  group_by(district) %>% 
+  summarize_at(.vars = vars(RECFIN_LENGTH_MM, agency_weight_g),
+               .funs = c(mean = "mean")) 
+View(rf_ca_lw)
 
-#Length density plot
-ca_g %>% 
+#Length density plot - Fishbrain
+fish_ca %>% 
   ggplot(aes(length_in_mm, color = district, fill = district)) +
   scale_color_viridis(discrete = TRUE) +
   geom_density(alpha = 0.1)
+#Length density plot - RecFIN
+recfin_ca %>% 
+  ggplot(aes(RECFIN_LENGTH_MM, color = district, fill = district)) +
+  scale_color_viridis(discrete = TRUE) +
+  geom_density(alpha = 0.1)
 
-#Weight density plot
-ca_g %>% 
+#Weight density plot - Fishbrain
+fish_ca %>% 
   ggplot(aes(weight_in_g, color = district, fill = district)) +
   scale_color_viridis(discrete = TRUE) +
   geom_density(alpha = 0.1) 
+#Weight density plot - RecFIN
+recfin_ca %>% 
+  ggplot(aes(agency_weight_g, color = district, fill = district)) +
+  scale_color_viridis(discrete = TRUE) +
+  geom_density(alpha = 0.1)
 ```
 
