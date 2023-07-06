@@ -38,6 +38,8 @@ fish_lw <- fishbrain %>%
                               latitude >= 37.18 & latitude < 38.91 ~ 'Bay Area',
                               latitude > 38.91 & latitude < 40.44 ~ 'Wine',
                               latitude > 40.44 ~ 'Redwood')) %>% 
+  mutate_at(vars(district), as.factor) %>% 
+  mutate(district = fct_relevel(district, c("Central", "Bay Area", "Wine", "Redwood"))) %>% 
   separate(caught_at_local_time, c('year', 'month', 'day')) %>% 
   filter(common_name == "Cabezon" | common_name == "Grass rockfish" | common_name == "Black rockfish" | common_name == "Copper rockfish" | common_name == "Brown rockfish" | common_name == "Kelp greenling" | common_name == "Blue rockfish" | common_name == "China rockfish" | common_name == "Olive rockfish" | common_name == "Rock greenling") %>% 
   mutate(length_in_mm = length_in_m * 1000) %>% 
@@ -110,8 +112,7 @@ recfin_lw %>%
   geom_boxplot() +
   facet_wrap(vars(SPECIES_NAME)) + 
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-  labs(x = "District", y = "Weight (g)") +
-  ylim(0, 4000)
+  labs(x = "District", y = "Weight (g)")
 ```
 
 Weight-length relationship
@@ -122,6 +123,7 @@ fish_lw %>%
   geom_point() +
   facet_wrap(vars(common_name)) +
   ylim(0, 6000) + 
+  xlim(0, 700) +
   labs(x = "Length (mm)", y = "Weight (g)")
 
 #RecFIN
