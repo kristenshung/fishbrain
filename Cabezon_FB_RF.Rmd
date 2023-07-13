@@ -67,7 +67,7 @@ Count by district
 ca_fb_dis <- fish_ca %>% 
   group_by(district) %>% 
   tally()
-View(ca_dis)
+View(ca_fb_dis)
 
 #RecFIN
 ca_rf_dis <- recfin %>% 
@@ -113,40 +113,31 @@ recfin_ca %>%
   geom_point() +
   labs(x = "Length (mm)", y = "Weight (g)")
 
-#Summary table with means - Fishbrain
-fb_ca_lw <- fish_ca %>% 
-  group_by(district) %>% 
-  drop_na() %>% 
-  summarize_at(.vars = vars(length_in_mm, weight_in_g),
-               .funs = c(mean = "mean"))
-View(fb_ca_lw)
-#Summary table with means - RecFIN
-rf_ca_lw <- recfin_ca %>% 
-  group_by(district) %>% 
-  summarize_at(.vars = vars(RECFIN_LENGTH_MM, agency_weight_g),
-               .funs = c(mean = "mean")) 
-View(rf_ca_lw)
-
 #Length density plot - Fishbrain
 fish_ca %>% 
   ggplot(aes(length_in_mm, color = district, fill = district)) +
   scale_color_viridis(discrete = TRUE) +
-  geom_density(alpha = 0.1)
+  geom_density(alpha = 0.1) + 
+  labs(x = "Length (mm)")
 #Length density plot - RecFIN
 recfin_ca %>% 
   ggplot(aes(RECFIN_LENGTH_MM, color = district, fill = district)) +
   scale_color_viridis(discrete = TRUE) +
-  geom_density(alpha = 0.1)
+  geom_density(alpha = 0.1) +
+  labs(x = "Length (mm)")
 
 #Weight density plot - Fishbrain
 fish_ca %>% 
   ggplot(aes(weight_in_g, color = district, fill = district)) +
   scale_color_viridis(discrete = TRUE) +
-  geom_density(alpha = 0.1) 
+  geom_density(alpha = 0.1) + 
+  xlim(0, 7000) +
+  labs(x = "Weight (g)")
 #Weight density plot - RecFIN
 recfin_ca %>% 
   ggplot(aes(agency_weight_g, color = district, fill = district)) +
   scale_color_viridis(discrete = TRUE) +
-  geom_density(alpha = 0.1)
+  geom_density(alpha = 0.1)+ 
+  labs(x = "Weight (g)")
 ```
 
