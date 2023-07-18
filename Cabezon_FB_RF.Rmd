@@ -39,7 +39,9 @@ fish_ca <- fishbrain %>%
   filter(common_name == "Cabezon") %>% 
   mutate(weight_in_g = weight_in_kg * 1000) %>% 
   mutate(length_in_mm = length_in_m * 1000) %>% 
+  mutate(length_in_cm = length_in_m * 100) %>% 
   mutate_at(vars(district), as.factor) %>% 
+  mutate(Sex = "F") %>% 
   mutate(district = fct_relevel(district, c("Central", "Bay Area", "Wine", "Redwood")))
 View(fish_ca)
 ```
@@ -57,7 +59,9 @@ recfin_ca <- recfin_bio %>%
                               .default = RECFIN_PORT_NAME)) %>% 
   mutate_at(vars(district), as.factor) %>% 
   mutate(district = fct_relevel(district, c("Central", "Bay Area", "Wine", "Redwood"))) %>% 
-  mutate(agency_weight_g = AGENCY_WEIGHT * 1000)
+  mutate(agency_weight_g = AGENCY_WEIGHT * 1000) %>% 
+  mutate(agency_length_cm = AGENCY_LENGTH / 10) %>% 
+  mutate(Sex = "F")
 View(recfin_ca)
 ```
 
@@ -107,11 +111,29 @@ fish_ca %>%
   geom_point() +
   ylim(0, 6000) + 
   labs(x = "Length (mm)", y = "Weight (g)")
+ca_ests <- estimate_weight_length(
+  data = fish_ca,
+  col_length = "length_in_mm",
+  col_weight = "weight_in_g")
+View(ca_ests)
+
 #Weight-length relationship - RecFIN
 recfin_ca %>% 
   ggplot(aes(RECFIN_LENGTH_MM, agency_weight_g)) +
   geom_point() +
   labs(x = "Length (mm)", y = "Weight (g)")
+recfin_ests <- estimate_weight_length(
+  data = recfin_ca,
+  col_length = "agency_length_cm",
+  col_weight = "AGENCY_WEIGHT")
+View(recfin_ests)
+
+length <- seq(0, 100, 1)
+plot(length, ca_ests$A[2] * length ^ ca_ests$B[2], type = 'l',
+     col = 'grey', lwd = 5)
+
+points(fish_ca$length_cm, fish_ca$weight_kg, col = alpha('black', 0.2), pch = 1)
+lines(length, recfin_ests$A[2] * length ^ recfin_ests$B[2], col = 'grey', lwd = 5)
 
 #Length density plot - Fishbrain
 fish_ca %>% 
