@@ -134,21 +134,29 @@ fish_gis <- read.csv("fish_gis.csv")
 View(fish_gis)
 ```
 
+Edit GIS Data
+```{r}
+fish_gis %>% 
+  mutate(length_in_cm = length_in_m * 100)
+View(fish_gis)
+```
+
 Length and weight in relation to distance from land/depth
 ```{r}
 #Length, distance from land
 fish_gis %>% 
   ggplot(aes(distance_land, length_in_mm)) +
   geom_point() + 
-  xlim(0, 20000) +
+  xlim(0, 2500) +
   labs(x = "Distance from Land (m)", y = "Length (mm)")
 
 #Weight, distance from land
 fish_gis %>% 
-  ggplot(aes(distance_land, weight_in_g)) +
+  ggplot(aes(distance_land, weight_in_kg)) +
   geom_point() + 
-  xlim(0, 20000) +
-  labs(x = "Distance from Land (m)", y = "Weight (g)")
+  ylim(0, 50) +
+  xlim(0, 2500) +
+  labs(x = "Distance from Land (m)", y = "Weight (kg)")
 
 #Length, depth
 fish_gis %>% 
@@ -160,12 +168,12 @@ fish_gis %>%
 
 #Weight, depth
 fish_gis %>% 
-  ggplot(aes(depth, weight_in_g)) +
+  ggplot(aes(depth, weight_in_kg)) +
   geom_point() + 
   scale_x_reverse() +
   xlim(0, -100) +
-  ylim(0, 125000)
-  labs(x = "Depth (m)", y = "Weight (g)")
+  ylim(0, 125000) + 
+  labs(x = "Depth (m)", y = "Weight (kg)")
 ```
 
 Number of fish by district - Fishbrain & RecFIN

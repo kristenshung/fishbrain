@@ -14,10 +14,10 @@ Load packages
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
-library(viridis)
+#library(viridis)
 ```
 
-Read in  data
+Read in data
 ```{r}
 fishbrain <- read_csv("fishbrain.csv")
 #View(fishbrain)
@@ -37,8 +37,6 @@ fish_ca <- fishbrain %>%
                               latitude > 40.44 ~ 'Redwood')) %>% 
   separate(caught_at_local_time, c('year', 'month', 'day')) %>%  
   filter(common_name == "Cabezon") %>% 
-  mutate(weight_in_g = weight_in_kg * 1000) %>% 
-  mutate(length_in_mm = length_in_m * 1000) %>% 
   mutate(length_in_cm = length_in_m * 100) %>% 
   mutate_at(vars(district), as.factor) %>% 
   mutate(Sex = "F") %>% 
@@ -59,8 +57,7 @@ recfin_ca <- recfin_bio %>%
                               .default = RECFIN_PORT_NAME)) %>% 
   mutate_at(vars(district), as.factor) %>% 
   mutate(district = fct_relevel(district, c("Central", "Bay Area", "Wine", "Redwood"))) %>% 
-  mutate(agency_weight_g = AGENCY_WEIGHT * 1000) %>% 
-  mutate(agency_length_cm = AGENCY_LENGTH / 10) %>% 
+  mutate(recfin_length_cm = RECFIN_LENGTH_MM / 10) %>% 
   mutate(Sex = "F")
 View(recfin_ca)
 ```
@@ -84,82 +81,125 @@ Length and weight analyses
 ```{r}
 #Length by district - Fishbrain
 fish_ca %>% 
-  ggplot(aes(district, length_in_mm)) +
+  ggplot(aes(district, length_in_cm)) +
   geom_boxplot() +
-  labs(x = "District", y = "Length (mm)")
+  labs(x = "District", y = "Length (cm)")
 #Length by district - RecFIN
 recfin_ca %>% 
-  ggplot(aes(district, RECFIN_LENGTH_MM)) + 
+  ggplot(aes(district, recfin_length_cm)) + 
   geom_boxplot() + 
-  labs(x = "District", y = "Length (mm)")
+  labs(x = "District", y = "Length (cm)")
 
 #Weight by district - Fishbrain
 fish_ca %>% 
-  ggplot(aes(district, weight_in_g)) +
+  ggplot(aes(district, weight_in_kg)) +
   geom_boxplot() +
-  labs(x = "District", y = "Weight (g)") +
-  ylim(0, 6000)
+  ylim(0, 8) +
+  labs(x = "District", y = "Weight (kg)")
 #Weight by district - RecFIN
 recfin_ca %>% 
-  ggplot(aes(district, agency_weight_g)) + 
+  ggplot(aes(district, AGENCY_WEIGHT)) + 
   geom_boxplot() + 
-  labs(x = "District", y = "Weight (g)")
+  labs(x = "District", y = "Weight (kg)")
 
 #Weight-length relationship - Fishbrain
 fish_ca %>% 
-  ggplot(aes(length_in_mm, weight_in_g)) +
+  ggplot(aes(length_in_cm, weight_in_kg)) +
   geom_point() +
-  ylim(0, 6000) + 
-  labs(x = "Length (mm)", y = "Weight (g)")
+  ylim(0, 8) +
+  labs(x = "Length (cm)", y = "Weight (kg)")
 ca_ests <- estimate_weight_length(
   data = fish_ca,
-  col_length = "length_in_mm",
-  col_weight = "weight_in_g")
+  col_length = "length_in_cm",
+  col_weight = "weight_in_kg")
 View(ca_ests)
-
 #Weight-length relationship - RecFIN
 recfin_ca %>% 
-  ggplot(aes(RECFIN_LENGTH_MM, agency_weight_g)) +
+  ggplot(aes(recfin_length_cm, AGENCY_WEIGHT)) +
   geom_point() +
-  labs(x = "Length (mm)", y = "Weight (g)")
+  labs(x = "Length (cm)", y = "Weight (kg)")
 recfin_ests <- estimate_weight_length(
   data = recfin_ca,
-  col_length = "agency_length_cm",
+  col_length = "recfin_length_cm",
   col_weight = "AGENCY_WEIGHT")
 View(recfin_ests)
 
 length <- seq(0, 100, 1)
-plot(length, ca_ests$A[2] * length ^ ca_ests$B[2], type = 'l',
-     col = 'grey', lwd = 5)
+par(mfrow = c(1, 2))
+plot(length, ca_ests$A[2] * length ^ ca_ests$B[2], type = 'l', col = 'black', lwd = 5, xlab = "Length (cm)", ylab = "Weight (kg)")
+points(fish_ca$length_in_cm, fish_ca$weight_in_kg, col = alpha('black', 0.2), pch = 1)
+lines(length, recfin_ests$A[2] * length ^ recfin_ests$B[2], col = 'blue', lwd = 5)
+plot(length, ca_ests$A[2] * length ^ ca_ests$B[2], type = 'l', col = 'black', lwd = 5, xlab = "Length (cm)", ylab = "Weight (kg)")
+points(recfin_ca$recfin_length_cm, recfin_ca$AGENCY_WEIGHT, col = alpha('blue', 0.2), pch = 2)
+lines(length, recfin_ests$A[2] * length ^ recfin_ests$B[2], col = 'blue', lwd = 5)
+```
 
-points(fish_ca$length_cm, fish_ca$weight_kg, col = alpha('black', 0.2), pch = 1)
-lines(length, recfin_ests$A[2] * length ^ recfin_ests$B[2], col = 'grey', lwd = 5)
+Read in GIS Data
+```{r}
+cb_gis <- read.csv("cb_gis.csv")
+View(cb_gis)
+```
 
+GIS Analyses
+```{r}
+#Length, distance from land
+cb_gis %>% 
+  ggplot(aes(distance_land, length_cm)) +
+  geom_point() +
+  xlim(0, 3000) + 
+  labs(x = "Distance from Land (m)", y = "Length (cm)")
+
+#Weight, distance from land
+cb_gis %>% 
+  ggplot(aes(distance_land, weight_kg)) +
+  geom_point() + 
+  ylim(0, 8) + 
+  xlim(0, 4000) + 
+  labs(x = "Distance from Land (m)", y = "Weight (kg)")
+
+#Length, depth
+cb_gis %>% 
+  ggplot(aes(depth, length_cm)) + 
+  geom_point() + 
+  scale_x_reverse() + 
+  labs(x = "Depth (m)", y = "Length (cm)")
+
+#Weight, depth
+cb_gis %>% 
+  ggplot(aes(depth, weight_kg)) + 
+  geom_point() + 
+  scale_x_reverse() + 
+  ylim(0, 8) + 
+  labs(x = "Depth (m)", y = "Weight (kg)")
+```
+
+Density plots
+```{r}
 #Length density plot - Fishbrain
 fish_ca %>% 
-  ggplot(aes(length_in_mm, color = district, fill = district)) +
+  ggplot(aes(length_in_cm, color = district, fill = district)) +
   scale_color_viridis(discrete = TRUE) +
   geom_density(alpha = 0.1) + 
-  labs(x = "Length (mm)")
+  labs(x = "Length (cm)")
 #Length density plot - RecFIN
 recfin_ca %>% 
-  ggplot(aes(RECFIN_LENGTH_MM, color = district, fill = district)) +
+  ggplot(aes(recfin_length_cm, color = district, fill = district)) +
   scale_color_viridis(discrete = TRUE) +
   geom_density(alpha = 0.1) +
-  labs(x = "Length (mm)")
+  labs(x = "Length (cm)")
 
 #Weight density plot - Fishbrain
 fish_ca %>% 
-  ggplot(aes(weight_in_g, color = district, fill = district)) +
+  ggplot(aes(weight_in_kg, color = district, fill = district)) +
   scale_color_viridis(discrete = TRUE) +
   geom_density(alpha = 0.1) + 
-  xlim(0, 7000) +
-  labs(x = "Weight (g)")
+  xlim(0, 8) +
+  labs(x = "Weight (kg)")
 #Weight density plot - RecFIN
 recfin_ca %>% 
-  ggplot(aes(agency_weight_g, color = district, fill = district)) +
+  ggplot(aes(AGENCY_WEIGHT, color = district, fill = district)) +
   scale_color_viridis(discrete = TRUE) +
   geom_density(alpha = 0.1)+ 
-  labs(x = "Weight (g)")
+  labs(x = "Weight (kg)")
 ```
 
