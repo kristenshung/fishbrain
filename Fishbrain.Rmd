@@ -17,7 +17,7 @@ library(ggplot2)
 Read in Fishbrain data
 ```{r}
 fishbrain <- read_csv("fishbrain.csv")
-#View(fishbrain)
+View(fishbrain)
 recfin <- read_csv("recfin.csv")
 #View(recfin)
 recfin_bio <- read_csv("recfin_bio.csv")
@@ -38,7 +38,7 @@ fish_lw <- fishbrain %>%
   filter(common_name == "Cabezon" | common_name == "Grass rockfish" | common_name == "Black rockfish" | common_name == "Copper rockfish" | common_name == "Brown rockfish" | common_name == "Kelp greenling" | common_name == "Blue rockfish" | common_name == "China rockfish" | common_name == "Olive rockfish" | common_name == "Rock greenling") %>% 
   mutate(length_in_mm = length_in_m * 1000) %>% 
   mutate(weight_in_g = weight_in_kg * 1000)
-#View(fish_lw)
+View(fish_lw)
 ```
 
 Edit RecFIN biological data
